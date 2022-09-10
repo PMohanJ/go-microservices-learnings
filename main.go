@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/pmohanj/go-microservices/handlers"
 )
 
@@ -16,9 +17,22 @@ func main() {
 
 	ph := handlers.NewProduct(l)
 
-	// Creating a new servermux
-	sm := http.NewServeMux()
-	sm.Handle("/", ph)
+	// Creating a new servermux using Gorillamux framework
+	sm := mux.NewRouter()
+
+	// Creating separate subrouters for each methods like GET POST, etc
+	getRouter := sm.Methods(http.MethodGet).Subrouter()
+	getRouter.HandleFunc("/", ph.GetProducts)
+
+	putRouter := sm.Methods(http.MethodPut).Subrouter()
+	putRouter.HandleFunc("/{id:[0-9]+}", ph.UpdateProducts)
+
+	// Using middllewares for data validation/deserializing
+	putRouter.Use(ph.MiddlewareValidateProduct)
+
+	postRouter := sm.Methods(http.MethodPost).Subrouter()
+	postRouter.HandleFunc("/", ph.AddProduct)
+	postRouter.Use(ph.MiddlewareValidateProduct)
 
 	s := &http.Server{
 		Addr:         ":9000",
