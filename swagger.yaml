@@ -1,0 +1,28 @@
+basePath: /
+consumes:
+    - application/json
+info:
+    description: Documentation for Product API
+    title: of Product API
+    version: 1.0.0
+paths:
+    /products:
+        get:
+            description: Returns a list of products
+            operationId: listProducts
+            responses:
+                "200":
+                    $ref: '#/responses/productsResponse'
+            tags:
+                - products
+produces:
+    - application/json
+responses:
+    productsResponse:
+        description: A list of products returns in response
+        schema:
+            items: {}
+            type: array
+schemes:
+    - http
+swagger: "2.0"

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,86 +10,43 @@ import (
 	"github.com/pmohanj/go-microservices/data"
 )
 
+type KeyProduct struct{}
+
 // This type is for handle Products
 type Products struct {
 	l *log.Logger
+	v *data.Validation
 }
 
 // This is kind of like returning a obj of Products struct
-func NewProduct(l *log.Logger) *Products {
-	return &Products{l}
+func NewProduct(l *log.Logger, v *data.Validation) *Products {
+	return &Products{l, v}
 }
 
-func (p *Products) GetProducts(rw http.ResponseWriter, r *http.Request) {
+var ErrInvalidProductPath = fmt.Errorf("Invalid path, path should be /products/[id]")
 
-	lp := data.GetProducts()
-
-	// Serialize the list to JSON
-	err := lp.ToJSON(rw)
-	if err != nil {
-		http.Error(rw, "Unable to marshal json", http.StatusInternalServerError)
-	}
+type GenericError struct {
+	Message string `json:"message"`
 }
 
-func (p Products) AddProduct(rw http.ResponseWriter, r *http.Request) {
-	p.l.Println("Handle POST Products")
-
-	// Getting deserialized data from the middleware context or
-	// atleat that's what I understood so far :|
-	prod := r.Context().Value(KeyProduct{}).(*data.Product)
-	data.AddProduct(prod)
+type ValidationError struct {
+	Messages []string `json:"messages"`
 }
 
-func (p *Products) UpdateProducts(rw http.ResponseWriter, r *http.Request) {
+// getProductID returns the product ID from the URL
+// Panics if cannot convert the id into an integer
+// this should never happen as the router ensures that
+// this is a valid number
+func getProductID(r *http.Request) int {
+	// parse the product id from the url
 	vars := mux.Vars(r)
+
+	// convert the id into an integer and return
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		http.Error(rw, "Unable to convert id to int", http.StatusBadRequest)
+		// should never happen
+		panic(err)
 	}
 
-	// Getting deserialized data from the middleware context or
-	prod := r.Context().Value(KeyProduct{}).(*data.Product)
-
-	err = data.UpdateProduct(id, prod)
-	if err == data.ErrProcutNotFound {
-		http.Error(rw, "Product not found", http.StatusNotFound)
-		return
-	}
-
-	if err != nil {
-		http.Error(rw, "Product some error", http.StatusInternalServerError)
-		return
-	}
-}
-
-type KeyProduct struct{}
-
-// A middleware is also a handler maily intented to use for data validation
-// or authentication before the request is passed to any actual main handlers
-func (p Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		prod := &data.Product{}
-
-		err := prod.FromJSON(r.Body)
-		if err != nil {
-			p.l.Println("ERROR deserializing product", err)
-			http.Error(rw, "Unable to unmarshal json", http.StatusBadRequest)
-			return
-		}
-
-		// validate the product
-		err = prod.Validate()
-		if err != nil {
-			p.l.Println("ERROR validating product", err)
-			http.Error(rw, fmt.Sprintf("Error validating product %s", err), http.StatusBadRequest)
-			return
-		}
-
-		// add product to the context
-		ctx := context.WithValue(r.Context(), KeyProduct{}, prod)
-		req := r.WithContext(ctx)
-
-		// calling next handler, which can be another middlerware or final handler
-		next.ServeHTTP(rw, req)
-	})
+	return id
 }
