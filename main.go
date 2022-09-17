@@ -38,7 +38,6 @@ func main() {
 
 	putR := sm.Methods(http.MethodPut).Subrouter()
 	putR.HandleFunc("/{id:[0-9]+}", ph.Update)
-	putR.Use(ph.MiddlewareValidateProduct)
 
 	// Using middllewares for data validation/deserializing
 	putR.Use(ph.MiddlewareValidateProduct)
