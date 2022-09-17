@@ -54,7 +54,7 @@ func GetProducts() Products {
 // If a product is not found this function returns a ProductNotFound error
 func GetProductByID(id int) (*Product, error) {
 	i := findIndexByProductID(id)
-	if id == -1 {
+	if i == -1 {
 		return nil, ErrProductNotFound
 	}
 
@@ -71,14 +71,14 @@ func getNextID() int {
 	return lp.ID + 1
 }
 
-func UpdateProduct(p Product) error {
-	pos := findIndexByProductID(p.ID)
+func UpdateProduct(id int, p *Product) error {
+	pos := findIndexByProductID(id)
 	if pos == -1 {
 		return ErrProductNotFound
 	}
 
 	// update the product in the DB
-	productList[pos] = &p
+	productList[pos] = p
 
 	return nil
 }
