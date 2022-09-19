@@ -11,7 +11,7 @@ import (
 // responses:
 // 	200: productsResponse
 
-// GetProducts returns the products from the data store
+// ListAll returns the products from the data store
 func (p *Products) ListAll(rw http.ResponseWriter, r *http.Request) {
 	p.l.Println("[DEBUG] get all records")
 
@@ -24,6 +24,13 @@ func (p *Products) ListAll(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// swagger:route GET /products/{id} products listSingleProduct
+// Return a single product form database
+// responses:
+//  200: productResponse
+//  404: errorResponse
+
+// ListSingle handles Get Requests
 func (p *Products) ListSingle(rw http.ResponseWriter, r *http.Request) {
 	id := getProductID(r)
 
